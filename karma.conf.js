@@ -27,12 +27,16 @@ module.exports = function (config) {
       suppressAll: true // removes the duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/app'),
+      // dir: require('path').join(__dirname, './coverage/app'),
+      // subdir: '.',
+      // reporters: [
+      //   { type: 'html' },
+      //   { type: 'text-summary' }
+      // ]
+      type: 'lcov', // SonarQube needs lcov format
+      dir: 'coverage/', // Directory where reports will be stored
       subdir: '.',
-      reporters: [
-        { type: 'html' },
-        { type: 'text-summary' }
-      ]
+      file: 'lcov.info'
     },
     reporters: ['progress', 'kjhtml','junit'],
     junitReporter: {

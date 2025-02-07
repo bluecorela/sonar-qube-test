@@ -10,7 +10,9 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:coverage": "ng test --code-coverage",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "sonar": "sonar-scanner",
+    "s":"sonar-scanner -Dsonar.projectKey=Sonar-Qube-Test -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_bbcd502e68fc9b35ac541461e27f2469753a8b89"
   },
   "private": true,
   "dependencies": {
@@ -56,6 +58,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "sonar-scanner": "^3.1.0",
     "typescript": "~5.6.3"
   }
 }
