@@ -76,11 +76,35 @@ jobs:
             root: ~/project
             paths:
               - .
+    run-unit-tests:
+      executor: docker-chrome
+      # parallelism: 4
+      steps:
+        - attach_workspace:
+            at: ~/project
+        # - run:
+        #     name: Install circleci
+        #     command: curl -fLSs https://circle.ci/cli | bash
+        - run-with-nvm:
+            title: Run tests
+            steps: |
+              echo "running tests..."  
+              CI=true npm run test:coverage
+        - persist_to_workspace:
+            root: ~/project
+            paths:
+              - coverage
+        - store_test_results: # Publica los resultados en la interfaz de CircleCI
+            path: test-results
+            
     run-sonar:
       executor: docker-amd64
       steps:
         - attach_workspace:
             at: ~/project
+        - run:
+            name: See coverage
+            command: ls -la coverage
         - sonar/scan
 
 workflows:
@@ -88,7 +112,10 @@ workflows:
     # Inside the workflow, you define the jobs you want to run.
     jobs:
       - install-dependencies
-      - run-sonar:
+      - run-unit-tests:
           requires:
             - install-dependencies
+      - run-sonar:
+          requires:
+            - run-unit-tests
           context: SonarCloud

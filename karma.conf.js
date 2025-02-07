@@ -2,6 +2,7 @@
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
 module.exports = function (config) {
+  const isCI = process.env.CI === 'true'; // Detecta si estás en un entorno CI
   config.set({
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
@@ -9,6 +10,7 @@ module.exports = function (config) {
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
+      require('karma-junit-reporter'),
       require('karma-coverage'),
       require('@angular-devkit/build-angular/plugins/karma')
     ],
@@ -32,13 +34,25 @@ module.exports = function (config) {
         { type: 'text-summary' }
       ]
     },
-    reporters: ['progress', 'kjhtml'],
+    reporters: ['progress', 'kjhtml','junit'],
+    junitReporter: {
+      outputDir: 'test-results',  // Carpeta donde se guardarán los resultados
+      outputFile: 'results.xml', // Nombre del archivo (opcional)
+      useBrowserName: false      // No incluir el nombre del navegador
+    },
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: true,
-    browsers: ['Chrome'],
-    singleRun: false,
+     // Selección de navegador basado en entorno
+     browsers: isCI ? ['ChromeHeadlessCustom'] : ['Chrome'],
+     customLaunchers: {
+       ChromeHeadlessCustom: {
+         base: 'ChromeHeadless',
+         flags: ['--no-sandbox', '--disable-gpu']
+       }
+     },
+     singleRun: isCI, // Ejecutar una sola vez en CI, en local usa modo observación
     restartOnFileChange: true
   });
 };
