@@ -7,17 +7,88 @@ version: 2.1
 orbs:
   # See the Node orb documentation here: https://circleci.com/developer/orbs/orb/circleci/node
   node: circleci/node@5.2
+  sonar: sonarsource/sonarcloud@2.0.0
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
+executors:
+  docker-arm64:
+    docker:
+      - image: abts17/android-ios-builder:0.0.2
+    resource_class: arm.medium
+  
+  docker-amd64:
+    docker:
+      - image: abts17/android-ios-builder:0.0.2
+    resource_class: medium
+  docker-chrome:
+    docker:
+      - image: abts17/node-chrome:0.0.0
+    resource_class: medium
+  #mac:
+    #resource_class: m2pro.medium
+  node-browsers:
+    docker:
+      - image: circleci/node:16-browsers
+
+commands:
+  run-with-nvm:
+    description: Ejecutar comandos con nvm cargado
+    parameters:
+      steps:
+        type: string
+      title:
+        type: string
+    steps:
+      - run:
+          name: <<parameters.title>>
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+            nvm use default
+            <<parameters.steps>>
+  npm-install:
+    description: Instalar dependencias de npm
+    steps:
+      - restore_cache:
+          keys:
+            # when lock file changes, use increasingly general patterns to restore cache
+            - node-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - node-v1-{{ .Branch }}-
+            - node-v1-
+      - run-with-nvm:
+          title: Install dependencies
+          steps: |
+            echo "Installing dependencies..."
+            npm ci
+      - save_cache:
+          paths:
+            - ~/.npm
+          key: node-v1-{{ .Branch }}-{{ checksum "package-lock.json" }}
+
+
+jobs:
+    install-dependencies:
+      executor: docker-amd64
+      steps:
+        - checkout
+        - npm-install
+        - persist_to_workspace:
+            root: ~/project
+            paths:
+              - .
+    run-sonar:
+      executor: docker-amd64
+      steps:
+        - attach_workspace:
+            at: ~/project
+        - sonar/scan
+
 workflows:
-  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
+  test: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - node/test:
-          # This is the node version to use for the `cimg/node` tag
-          # Relevant tags can be found on the CircleCI Developer Hub
-          # https://circleci.com/developer/images/image/cimg/node
-          version: '22.12'
-          # If you are using yarn, change the line below from "npm" to "yarn"
-          pkg-manager: npm
+      - install-dependencies
+      - run-sonar:
+          requires:
+            - install-dependencies
+          context: SonarCloud
