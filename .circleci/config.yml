@@ -107,6 +107,7 @@ jobs:
             command: ls -la coverage
         - sonar/scan
 
+
 workflows:
   test: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
